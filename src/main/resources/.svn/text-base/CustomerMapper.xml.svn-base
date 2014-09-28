@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.eastteam.myprogram.dao.CustomerMybatisDao">	
+	<insert id="insert" parameterType="Customer" useGeneratedKeys="true" keyProperty="id">
+		insert into customer (customer_name,customer_phone,customer_sex,job,weixin,	weibo,qq,birthday,favorite,description)
+		values(#{customerName},#{customerPhone},#{customerSex},#{job},#{weixin},#{weibo},#{qq},#{birthday},#{favorite},#{description})
+	</insert>
+	<update id="update" parameterType="Customer">
+		update customer set 
+		customer_name=#{customerName},
+		customer_phone=#{customerPhone},
+		customer_sex=#{customerSex},
+		job=#{job},
+		weixin=#{weixin},
+		weibo=#{weibo},
+		qq=#{qq},
+		birthday=#{birthday},
+		favorite=#{favorite},
+		description=#{description}
+		where customer_id=#{id}
+	</update>	
+</mapper> 

@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.eastteam.myprogram.dao.SchemeMybatisDao">
+ 	<resultMap id="schemeDetailMap" type="Scheme"> 
+		<id property="id" column="scheme_id" />
+		<result property="name" column="scheme_name" />
+		<result property="modificationTimestamp" column="modif_time" />
+		<result property="comment" column="comment" />
+ 		<association property="status" javaType="Category">
+			<id property="id" column="c_id" />
+			<result property="name" column="c_name" />
+		</association>
+		<association property="creator" javaType="User">
+			<id property="id" column="uo_id" />
+			<result property="name" column="uo_name" />
+		</association>
+		<association property="mycase" column="case_id" javaType="Case">
+			<id property="id" column="case_id" />
+			<result property="title" column="case_title" />
+			<result property="businessType.id" column="business_type" />
+			<result property="eventTime" column="event_time" />
+			<result property="space.holders.holder_name" column="holder_name"/>
+		</association>
+		<collection property="types" javaType="Category">
+			<id property="id" column="cat_id" />
+			<result property="name" column="cat_name" />
+		</collection>	
+	</resultMap>
+	
+	<!-- 
+	<select id="getProductExt" parameterType="Long" resultType="productExtDetailMap">
+	    select p.product_id,p.title,p.status,p.description,p.default_picture_id,p.price,p.is_outsourcing,
+	    sp.product_count ,sp.trashed,sp.refer_datetime ,sp.discount
+	    from scheme_product sp
+	    left join products p on sp.product_id=p.product_id
+	    where sp.scheme_id= #{scheme_id}
+	</select>
+	 -->
+	<select id="selectMediaExt" parameterType="map" resultMap="mediaExtMap">
+		select 
+		spr.position position,m.media_id, m.title, m.description,m.media_type as mediaType,m.path,m.status,m.user_id as userId,m.upload_timestamp as uploadTimestamp,m.author as author,
+		spp.product_id,spp.product_count,spp.category_id,spp.position,p.title productTitle,p.status productStatus, p.description productDescription,p.price,p.default_picture_id
+		from scheme_procedures sp
+		left join scheme_procedure_resource spr on sp.scheme_procedure_id=spr.scheme_procedure_id
+		left join medias m on m.media_id=spr.media_id
+		left join scheme_procedure_product spp on sp.scheme_procedure_id=spp.scheme_procedure_id
+		left join products p on p.product_id=spp.product_id
+		where sp.scheme_id = #{scheme_id}
+		and sp.procedure_id=#{procedure_id}
+		and m.media_type='picture'
+	</select>
+	
+	<resultMap type="Procedure" id="procedureMap">
+			<id property="id" column="procedure_id" />
+			<result property="name" column="procedure_name" />
+			<result property="description" column="description" />
+			<result property="position" column="position" />
+			<association property="businessType" column="business_type" javaType="Category">
+				<id property="id" column="c_id" />
+				<result property="name" column="c_name" />
+			</association>
+			<!-- 
+			<collection property="medias" column="procedure_id"   ofType="MediaExt" select="selectMediaExt">
+			</collection>
+			 -->
+	</resultMap>
+	
+	<select id="selectProcedure" resultMap="procedureMap">
+	   select p.procedure_id as procedure_id, p.procedure_name as procedure_name, p.business_type, sp.description as description, p.position as position, c.id as c_id, c.name as c_name
+		from procedures p,scheme_procedures sp,category c
+		where p.procedure_id = sp.procedure_id 
+		and sp.scheme_id = #{scheme_id}
+		and p.business_type = c.id
+	</select>
+		
+	<select id="search" parameterType="map" resultMap="schemeDetailMap">
+		select s.scheme_id, s.modified_timestamp as modif_time,s.comment,s.case_id,s.scheme_name,s.scheme_path,s.inherit_scheme_id,
+  		c.id as c_id, c.name as c_name,uo.id as uo_id,uo.name as uo_name,ca.case_id as case_id,ca.case_title as case_title,hd.holder_name as holder_name,
+		cat.id as cat_id,cat.name as cat_name
+		from schemes s 
+		left join category c on s.status=c.id
+		left join users uo on s.created_by=uo.id
+		left join cases ca on s.case_id=ca.case_id 
+		left join spaces sp on sp.space_id=ca.space_id
+		left join holders hd on hd.holder_id=sp.holder_id
+		left join scheme_category sc on sc.scheme_id = s.scheme_id
+		left join category cat on cat.id = sc.scheme_type
+		<where>
+			<if test="keyword != null">
+				and ca.case_title||s.scheme_name||hd.holder_name like '%${keyword}%'
+			</if>
+			<if test="owner_id !=null">
+				and s.created_by like '${owner_id}'
+			</if>
+			<if test="statusId !=null">
+				and s.status like '${statusId}%'
+			</if>
+			<if test="categoryId !=null">
+			    and sc.scheme_type like '${categoryId}%'
+			</if>
+		</where>
+		<if test="sort != null">
+			order by ${sort} 
+		</if>
+		<if test="offset != null">
+			limit #{offset}, #{pageSize}
+		</if>
+	</select>
+	
+	<select id="getSchemeLiteList" resultMap="schemeDetailMap">
+		select s.scheme_id, s.modified_timestamp as modif_time,s.comment,s.case_id,s.scheme_name,
+  		c.id as c_id, c.name as c_name,uo.id as uo_id,uo.name as uo_name,
+		cat.id as cat_id,cat.name as cat_name
+		from schemes s 
+		left join category c on s.status=c.id
+		left join users uo on s.created_by=uo.id
+		left join scheme_category sc on sc.scheme_id = s.scheme_id
+		left join category cat on cat.id = sc.scheme_type
+		where s.case_id=#{caseId}
+	</select>
+	
+	<select id="getCount" parameterType="map" resultType="Long">
+		select count(0)
+		from schemes s
+	</select> 	
+		
+	<select id="getScheme" parameterType="Long" resultMap="schemeDetailMap">
+		select s.scheme_id, s.modified_timestamp as modif_time,s.comment,s.case_id,s.scheme_name,
+  		c.id as c_id, c.name as c_name,uo.id as uo_id,uo.name as uo_name,
+  		ca.case_id as case_id,ca.case_title as case_title,ca.business_type as business_type,ca.event_time as event_time,
+		cat.id as cat_id,cat.name as cat_name
+		from schemes s 
+		left join category c on s.status=c.id
+		left join users uo on s.created_by=uo.id
+		left join cases ca on s.case_id=ca.case_id 
+		left join scheme_category sc on sc.scheme_id = s.scheme_id
+		left join category cat on cat.id = sc.scheme_type
+		 where s.scheme_id=#{schemeId}
+	</select>
+	
+	<select id="getProcedures" parameterType="String" resultType="Procedure">
+		select p.procedure_id as id, p.procedure_name as name, p.position as position
+		from procedures p
+		where p.business_type=#{businessType}
+	</select>
+	
+	<!-- 找出某个特定scheme 的media-->
+	<select id="getSchemeProcedureResourceMediaList" parameterType="Long" resultType="Media">
+		select m.media_id as id, m.media_type as mediaType, m.path, m.title, m.description
+		from schemes s
+		left join scheme_procedures sp on s.scheme_id=sp.scheme_id
+		left join scheme_procedure_resource spr on sp.scheme_procedure_id=spr.scheme_procedure_id
+		left join medias m on m.media_id=spr.media_id
+		where s.scheme_id=#{schemeId} and m.media_type='picture'
+	</select>
+	
+	<!-- 找出某个特定scheme 的product-->
+	<select id="getSchemeProcedureProductList" parameterType="Long" resultType="Product">
+		select distinct p.product_id as id, p.default_picture_id as defaultPictureId, p.title, p.description
+		from schemes s
+		left join scheme_procedures sp on s.scheme_id=sp.scheme_id
+		left join scheme_procedure_product spp on sp.scheme_procedure_id=spp.scheme_procedure_id
+		left join products p on p.product_id=spp.product_id
+		where s.scheme_id=#{schemeId}
+	</select>
+	
+	<!-- 插入Scheme-->
+	<insert id="addScheme" parameterType="Scheme" useGeneratedKeys="true" keyProperty="id" >
+		insert into schemes(case_id,scheme_name,created_by,modified_timestamp,status,comment) values(#{mycase.id}, #{name}, #{creator.id},#{modificationTimestamp}, #{status.id}, #{comment})
+	</insert>
+	
+<!-- 修改Scheme-->
+	<update id="updateScheme" parameterType="Scheme">
+		update schemes set scheme_name=#{name}, modified_timestamp=#{modificationTimestamp}, status=#{status.id}, comment=#{comment}
+		 where scheme_id=#{id};
+	</update>
+	
+	<!-- 删除scheme_category-->	
+	<delete id="deleteScheme" parameterType="Scheme">
+		delete from schemes where scheme_id=#{id};
+	</delete>
+	
+	<!-- 插入scheme_category-->
+	<insert id="addSchemeCategory" parameterType="map">
+		insert into scheme_category  (scheme_id, scheme_type)
+		values(#{schemeId},#{categoryId});
+	</insert>
+	
+<!-- 删除scheme_category-->	
+	<delete id="deleteSchemeCategory" parameterType="Long">
+		delete from scheme_category where scheme_id=#{schemeId};
+	</delete>
+	
+	<!-- 获取scheme_procedure_id -->
+	<select id="getSchemeProcedureId" parameterType="Map" resultType="Long">
+		select sp.scheme_procedure_id as schemeProcedureId
+		from scheme_procedures sp 
+		 where sp.scheme_id=#{schemeId} and sp.procedure_id=#{procedureId}
+	</select>
+	
+	<!-- 获取scheme_procedure_id list-->
+	<select id="getSchemeProcedureIdList" parameterType="Long" resultType="Long">
+		select sp.scheme_procedure_id as schemeProcedureId
+		from scheme_procedures sp 
+		 where sp.scheme_id=#{schemeId}
+	</select>
+	
+	<!-- 插入scheme_procedures-->
+	<insert id="addSchemeProcedures" parameterType="SchemeProcedure" useGeneratedKeys="true" keyProperty="id">
+		insert into scheme_procedures(scheme_id,procedure_id,description,position) values(#{scheme.id},#{procedure.id},#{description},#{position});
+	</insert>
+	
+	<delete id="deleteSchemeProcedures" parameterType="Long">
+		delete from scheme_procedures where scheme_id=#{schemeId};
+	</delete>
+	
+		<!-- 插入scheme_procedure_resource-->
+	<insert id="addSchemeProcedureResource" parameterType="map">
+		insert into scheme_procedure_resource(scheme_procedure_id,media_id,position) values(#{schemeProcedureId},#{mediaId},#{position});
+	</insert>
+	
+	<!-- 修改scheme_procedure_resource-->
+	<update id="updateSchemeProcedureResource" parameterType="map">
+		update scheme_procedure_resource set scheme_procedure_id=#{schemeProcedureId}, media_id=#{mediaId}, position=#{position}
+		 where scheme_procedure_id=#{schemeProcedureId};
+	</update>
+	<!-- 删除scheme_procedure_resource-->
+	<delete id="deleteSchemeProcedureResource" parameterType="Long">
+		delete from scheme_procedure_resource where scheme_procedure_id=#{schemeProcedureId};
+	</delete>
+	
+	<!-- 插入scheme_procedure_product-->
+	<insert id="addSchemeProcedureProduct" parameterType="map">
+		insert into scheme_procedure_product(scheme_procedure_id,product_id,product_count,category_id,position) values(#{schemeProcedureId},#{productId},#{productCount},#{categoryId},#{position});
+	</insert>
+	
+	<!-- 修改scheme_procedure_product-->
+	<update id="updateSchemeProcedureProduct" parameterType="map">
+		update scheme_procedure_product set scheme_procedure_id=#{schemeProcedureId}, product_id=#{productId}, product_count=#{productCount},category_id=#{categoryId},position=#{position}
+		 where scheme_procedure_id=#{schemeProcedureId};
+	</update>
+	
+	<!-- 删除scheme_procedure_product-->
+	<delete id="deleteSchemeProcedureProduct" parameterType="Long">
+		delete from scheme_procedure_product where scheme_procedure_id=#{schemeProcedureId};
+	</delete>
+	
+	<resultMap id="mediaExtMap" type="MediaExt">
+		<id property="id" column="media_id"/>
+		<result property="trashed" column="trashed" />
+		<result property="referDatetime" column="refer_datetime" />
+		<result property="mediaType" column="media_type" />
+		<result property="path" column="path" />
+		<result property="status" column="status" />
+		<result property="description" column="description" />
+		<result property="uploadTimestamp" column="uploadTimestamp" />
+		<result property="userId" column="userId" />
+		<result property="title" column="title" />
+		<result property="author" column="author" />
+		<association property="user" javaType="User">
+			<id property="id" column="u_id" />
+			<result property="name" column="u_name" />
+		</association>
+	</resultMap>
+<!-- 找出某个特定scheme 的media-->
+	<select id="getMediaList" parameterType="Long" resultMap="mediaExtMap">
+		select  sr.trashed trashed,sr.refer_datetime refer_datetime,
+		m.media_id, m.title, m.description,m.media_type,m.path,m.status,m.user_id as userId,m.upload_timestamp as uploadTimestamp,m.author as author,
+		u.id u_id ,u.name u_name
+		from scheme_resource sr
+		left join medias m on m.media_id=sr.media_id
+		left join users u on u.id=sr.user_id
+		where sr.scheme_id=#{schemeId}
+	</select>
+	
+	
+	<!-- 找出某个特定scheme 的product-->
+	<select id="getProductList" parameterType="Long" resultMap="mediaExtMap">
+		select spp.product_id,spp.product_count,spp.category_id,spp.position,p.title productTitle,p.status productStatus, p.description productDescription,p.price,p.default_picture_id
+		from schemes s
+		left join scheme_procedures sp on s.scheme_id=sp.scheme_id
+		left join scheme_procedure_product spp on sp.scheme_procedure_id=spp.scheme_procedure_id
+		left join products p on p.product_id=spp.product_id
+		where s.scheme_id=#{schemeId}
+	</select>
+	
+	
+	<resultMap id="productExtDetailMap" type="ProductExt">
+		<result property="id" column="product_id" />
+		<result property="description" column="description" />
+		<result property="title" column="title" />
+		<result property="status" column="status" />
+		<result property="price" column="price" />
+		<result property="defaultPictureId" column="default_picture_id" />
+		<result property="outSourcing" column="is_outsourcing" />
+		<result property="productCount" column="product_count" />
+		<result property="trashed" column="trashed" />
+		<result property="referDatetime" column="refer_datetime" />
+		<result property="discount" column="discount" />
+		<result property='categoryId' column='category_id'/>
+ 		<association property="user" javaType="User">
+			<id property="id" column="u_id" />
+			<result property="name" column="u_name" />
+		</association>
+	</resultMap>
+	<select id="getProductExt" parameterType="Long" resultMap="productExtDetailMap">
+	    select p.product_id,p.title,p.status,p.description,p.default_picture_id,p.price,p.is_outsourcing,
+	    sp.product_count ,sp.trashed,sp.refer_datetime ,sp.discount, sp.category_id,
+	    u.id u_id,u.name u_name
+	    from scheme_product sp
+	    left join products p on sp.product_id=p.product_id
+	    left join users u on sp.user_id=u.id
+	    where sp.scheme_id= #{scheme_id}
+	</select>
+	<select id="getSelectCategories" parameterType="map" resultType="ProductCategoryBean">
+	    select c.id ,c.name,c.pid,sp.price as price,pc.price as newPrice,pc.picture_id as pictureId
+	    from scheme_product sp
+	    left join category c on sp.category_id=c.id
+	    left join product_category pc on pc.product_id=sp.product_id and pc.category_id=sp.category_id
+	    where sp.scheme_id= #{schemeId}
+	    and sp.product_id=#{productId}
+	    and sp.category_id=#{categoryId}
+	</select>
+	
+	<select id="getSelectedPicture" parameterType="map" resultType="MediaExt">
+	    select m.media_id as id
+	    from scheme_resource sr
+	    left join medias m on sr.media_id=m.media_id
+	    where sr.scheme_id= #{schemeId}
+	    and sr.media_id=#{mediaId}
+	</select>
+	
+	<select id="getAttributes" parameterType="map" resultType="Category">
+	    select c.id ,c.name,c.pid
+	    from scheme_product sp
+	    left join category c on sp.attribute_category_id=c.id
+	    where sp.scheme_id= #{schemeId}
+	    and sp.product_id=#{productId}
+	    and sp.category_id=#{categoryId}
+	</select>
+	
+	<insert id="addProducts"  parameterType="map">
+		insert into scheme_product (scheme_id,product_id,product_count,category_id,trashed,user_id,refer_datetime,discount,price,attribute_category_id) 
+		values(#{schemeId},#{prodId},#{prodCount},#{categoryId},#{trashed},#{userId},#{referTime},#{discount},#{price},#{attributeId});
+	</insert>
+	
+	<update id="updateProduct" parameterType="map">
+		update scheme_product set product_count=#{prodCount}, discount=#{discount}, price=#{price}, attribute_category_id=#{attributeId}
+		where scheme_id=#{schemeId} and product_id=#{prodId} and category_id=#{categoryId};
+	</update>
+	<!-- 删除scheme_product-->
+	<update id="deleteShemeProduct" parameterType="map">
+		update scheme_product set trashed='T'
+		where scheme_id=#{schemeId} and product_id=#{prodId} and category_id=#{categoryId}
+	</update>
+	<update id="recoverShemeProduct" parameterType="map">
+		update scheme_product set trashed='F'
+		where scheme_id=#{schemeId} and product_id=#{prodId} and category_id=#{categoryId}
+	</update>
+	<insert id="addMedias" parameterType="map">
+		insert into scheme_resource (scheme_id, media_id, media_type, trashed, user_id, refer_datetime)
+		values (#{schemeId}, #{mediaId}, #{mediaType}, #{trashed}, #{userId}, #{referTime})
+	</insert>
+	<!-- 删除scheme_resource-->
+	<update id="deleteShemeMedia" parameterType="map">
+		update scheme_resource set trashed='T'
+		where scheme_id=#{schemeId} and media_id=#{mediaId} 
+	</update>
+	<update id="recoverShemeMedia" parameterType="map">
+		update scheme_resource set trashed='F'
+		where scheme_id=#{schemeId} and media_id=#{mediaId} 
+	</update>
+	<!-- 删除scheme_product-->
+	<delete id="deleteAllShemeProducts" parameterType="Long">
+		delete from scheme_product where scheme_id=#{scheme_id};
+	</delete>
+	<!-- 删除scheme_procedure_product-->
+	<delete id="deleteAllShemeResources" parameterType="Long">
+		delete from scheme_resource where scheme_id=#{scheme_id};
+	</delete>
+	
+	<select id="getResourceHistory" parameterType="map" resultType="DownloadResourceHistory">
+		select rh.download_resource_id as id, rh.user_id as userId, rh.scheme_id as schemeId, m.title as mediaTitle, m.media_type as mediaType, rh.download_datetime as downloadTimestamp
+		from download_resource_history rh
+		left join medias m on m.media_id=rh.media_id
+		where rh.scheme_id=#{schemeId} and rh.user_id=#{userId}
+	</select>
+	
+	<select id="getProductHistory" parameterType="map" resultType="DownloadProductHistory">
+		select ph.download_product_id as id, ph.user_id as userId, ph.scheme_id as schemeId, ph.product_id as productId, p.title as productTitle, c.name as categoryName, ph.download_datetime as downloadTimestamp
+		from download_product_history ph
+		left join products p on p.product_id=ph.product_id
+		left join category c on c.id=ph.category_id
+		where ph.scheme_id=#{schemeId} and ph.user_id=#{userId}
+	</select>
+	<insert id="addDownloadResourceHistory" parameterType="DownloadResourceHistory" useGeneratedKeys="true" keyProperty="id" >
+		insert into download_resource_history(user_id,case_id,scheme_id,media_id,download_datetime)
+		values (#{userId}, #{caseId}, #{schemeId}, #{mediaId}, #{downloadTimestamp})
+	</insert>
+	<insert id="addDownloadProductHistory" parameterType="DownloadProductHistory" useGeneratedKeys="true" keyProperty="id" >
+		insert into download_product_history(user_id,case_id,scheme_id,product_id,category_id,download_datetime)
+		values (#{userId}, #{caseId}, #{schemeId}, #{productId}, #{categoryId},#{downloadTimestamp})
+	</insert>
+	
+</mapper>
