@@ -22,7 +22,7 @@ public class WeixinController {
 	
 	@RequestMapping(method = RequestMethod.GET,value = "/api/connect")
 	@ResponseBody
-	public String connect(@RequestParam(value = "echoStr", defaultValue = "not from weixin")String echo) {
+	public String connect(@RequestParam(value = "echostr", defaultValue = "not from weixin")String echo) {
 		logger.info("echo={}", echo);
 		return echo;
 	}
