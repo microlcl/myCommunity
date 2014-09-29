@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eastteam.myprogram.dao.PaperMybatisDao">
+	<resultMap id="paperDetailMap" type="Paper">
+		<id property="id" column="paper_id"/>
+		<result property="paperName" column="paper_name"/>
+		<association property="businessType" javaType="Category">
+			<id property="id" column="cb_id" />
+			<result property="name" column="cb_name" />
+		</association>
+		<association property="formType" javaType="Category">
+			<id property="id" column="cf_id" />
+			<result property="name" column="cf_name" />
+		</association>		
+		<association property="status" javaType="Category">
+			<id property="id" column="cs_id" />
+			<result property="name" column="cs_name" />
+		</association>
+		<collection property="questions" column="paper_id" ofType="Question" select="selectQuestions">				
+		</collection>
+	</resultMap>
+	<select id="search" parameterType="map" resultMap="paperDetailMap">
+		select p.paper_id, p.paper_name, cb.id as cb_id, cb.name as cb_name,cf.id as cf_id, cf.name as cf_name, cs.id as cs_id, cs.name as cs_name
+		from papers p
+		left join category cb on p.business_type=cb.id
+		left join category cf on p.form_type=cf.id
+		left join category cs on p.status=cs.id
+		left join paper_questions pq on p.paper_id=pq.paper_id
+		left join questions q on pq.question_id=q.question_id 
+		<where>
+			<if test="status != null">
+		        cs.id = #{status}
+			</if>
+			<if test="businessType != null">
+		        and p.business_type = #{businessType}
+			</if>
+			<if test="formType != null">
+		        and p.form_type = #{formType}
+			</if>			
+			<if test="keyword != null">
+				and (p.paper_name like '%${keyword}%' or q.question like '%${keyword}%')
+			</if>
+		</where>
+		<if test="sort != null">
+			order by ${sort}
+		</if>
+	</select>
+	<select id="getCount" parameterType="map" resultType="Long">
+		select count(0) from (select distinct p.paper_id from papers p 
+		left join category cb on p.business_type=cb.id 
+		left join category cf on p.form_type=cf.id
+		left join category cs on p.status=cs.id
+		left join paper_questions pq on p.paper_id=pq.paper_id
+		left join questions q on pq.question_id=q.question_id 
+		<where>
+			<if test="status != null">
+		        cs.id = #{status}
+			</if>
+			<if test="businessType != null">
+		        and cb.id = #{businessType}
+			</if>
+			<if test="formType != null">
+		        and cf.id = #{formType}
+			</if>				
+			<if test="keyword != null">
+				and (p.paper_name like '%${keyword}%' or q.question like '%${keyword}%')
+			</if>
+		</where>)t
+	</select>
+	<select id="selectQuestions" resultType="Question">
+	    select q.question as question, q.question_id as id, q.question_type as questionType, q.question_options as questionOptions, q.trashed as trashed, pq.position as position
+	    from questions q, paper_questions pq 
+	    where q.question_id=pq.question_id and pq.paper_id=#{paper_id} order by pq.position
+	</select>
+	<insert id="insertPaper" parameterType="Paper" useGeneratedKeys="true" keyProperty="id">
+		insert into papers (paper_name, creat_timestamp, business_type, form_type,status) 
+		values(#{paperName}, now(), #{businessType.id},#{formType.id}, '1-0-1-0');
+	</insert>
+	<insert id="insertQuestions" parameterType="map">
+		insert into paper_questions (paper_id, question_id, position) 
+		values (#{paperId}, #{questionId}, #{position});
+	</insert>
+	<select id="selectPaper" parameterType="map" resultMap="paperDetailMap">
+		select p.paper_id, p.paper_name, cb.id as cb_id, cb.name as cb_name,cf.id as cf_id, cf.name as cf_name, cs.id as cs_id, cs.name as cs_name
+		from papers p
+		left join category cb on p.business_type=cb.id
+		left join category cf on p.form_type=cf.id
+		left join category cs on p.status=cs.id
+		where p.paper_id=#{paperId};
+	</select>
+	<delete id="deletePaper" parameterType="Long">
+		delete from papers where paper_id=#{id}
+	</delete>
+	<delete id="deleteQuestions" parameterType="Long">
+		delete from paper_questions where paper_id=#{id}
+	</delete>
+	<update id="publishPaper" parameterType="Long">
+		update papers set status='1-0-1-1'
+		where paper_id=#{id}
+	</update>
+	<update id="updatePaper" parameterType="Paper">
+		update papers set paper_name = #{paperName}, business_type = #{businessType.id},form_type = #{formType.id}, status = '1-0-1-0'
+		where paper_id=#{id}
+	</update>
+	<update id="discardPaper" parameterType="Long">
+		update papers set status='1-0-1-2'
+		where paper_id=#{id}
+	</update>
+</mapper>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eastteam.myprogram.dao.QuestionMybatisDao">
+	<!-- 插入问题-->
+	<insert id="save" parameterType="Question" useGeneratedKeys="true" keyProperty="id" >
+		insert into questions (question, question_type, trashed, question_options, business_type, user_id)
+		values (#{question},#{questionType},'F',#{questionOptions},#{businessType},#{creater.id});
+	</insert>
+	
+	<!-- 更新问题 -->
+	<update id="update" parameterType="Question">
+		update questions set question=#{question}, question_type=#{questionType}, question_options=#{questionOptions}, business_type=#{business_type}
+		where question_id=#{id}
+	</update>
+	
+	<!-- 删除问题 -->
+	<update id="delete" parameterType="Long">
+		update questions set trashed='T' where question_id=#{id}
+	</update>
+	
+	<resultMap type="Question" id="questionDetailMap">
+		<id property="id" column="question_id" />
+		<result property="question" column="question" />
+		<result property="questionType" column="question_type" />
+		<result property="questionOptions" column="question_options" />
+		<result property="businessType" column="business_type" />
+		<result property="trashed" column="trashed" />
+		<association property="creater" column="user_id" javaType="User">
+			<id property="id" column="user_id" />
+			<result property="name" column="creater_name" />
+		</association>
+	</resultMap>
+	
+	<!-- 获取问题 -->
+	<select id="search" parameterType="map" resultMap="questionDetailMap">
+		select q.question_id, q.question, q.question_type, q.question_options, q.business_type, q.trashed, q.user_id,u.name as creater_name from questions q
+		left join users u on q.user_id=u.id 
+		<where>
+			<if test="keyword != null">
+				q.question like '%${keyword}%'
+			</if>
+			<if test="userId != null">
+				and u.id=#{userId}
+			</if>
+			<if test="categoryIdList != null">
+		        and q.business_type in 
+		        <foreach item="item" index="index" collection="categoryIdList" open="(" separator="," close=")">
+			        #{item}
+				</foreach>
+			</if>
+			<if test="trashed != null">
+				and trashed=#{trashed}
+			</if>
+		</where>
+		<if test="sort != null">
+			order by ${sort}
+		</if>
+		<if test="offset != null">
+			limit #{offset}, #{pageSize}
+		</if>
+	</select>
+	
+	<!-- 问题数量 -->
+	<select id="getCount" parameterType="map" resultType="Long">
+		select count(0) from questions q 
+		left join users u on q.user_id=u.id 
+		<where>
+			<if test="keyword != null">
+			    question like '%${keyword}%'
+			</if>
+			<if test="userId != null">
+				and u.id=#{userId}
+			</if>
+			<if test="categoryIdList != null">
+		        and business_type in 
+		        <foreach item="item" index="index" collection="categoryIdList" open="(" separator="," close=")">
+			        #{item}
+				</foreach>
+			</if>
+			<if test="trashed != null">
+				and trashed=#{trashed}
+			</if>
+		</where>
+	</select>
+	
+	<select id="getQuestion" resultMap="questionDetailMap">
+		select q.question_id, q.question, q.question_type, q.question_options, q.business_type, q.trashed from questions q
+		where q.question_id=#{questionId}
+	</select>
+	
+	<select id="questionAnsweredCount" parameterType="Long" resultType="Long">
+		select count(0) from paper_answers 
+		where question_id=#{questionId}
+	</select>
+	
+	<select id="questionUsedCount" parameterType="Long" resultType="Long">
+		select count(0) from paper_questions 
+		where question_id=#{questionId}
+	</select>
+	
+	<select id="questionRelatedPaper" parameterType="Long" resultType="Paper">
+		select p.paper_id as id, p.paper_name as paperName from paper_questions pq, papers p
+		where pq.question_id=#{questionId} and pq.paper_id=p.paper_id 
+	</select>
+</mapper>

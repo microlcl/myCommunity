@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.eastteam.myprogram.dao.DepartmentMybatisDao">
+	<resultMap id="departmentDetailMap" type="Department">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<collection property="children" column="id" ofType="Department" select="selectDepartment">	
+		    <id property="id" column="id" />
+			<result property="name" column="name" />
+			<collection property="children" column="id" ofType="Department" select="selectDepartment"/>				
+		</collection>
+	</resultMap>
+	
+	
+	<select id="selectDepartment" resultMap="departmentDetailMap">
+		select department_id as id, name
+		from departments
+		where pid=#{id}
+	</select>
+	<select id="getDepartment" resultMap="departmentDetailMap">
+		select department_id as id, name
+		from departments
+		where department_id=#{id}
+	</select>
+</mapper> 

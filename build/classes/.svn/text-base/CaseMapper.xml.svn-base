@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.eastteam.myprogram.dao.CaseMybatisDao">	
+
+	<resultMap id="caseDetailMap" type="Case">
+		<id property="id" column="id" />
+		<result property="title" column="title" />
+		<result property="createdTimestamp" column="createdTimestamp" />
+		<result property="eventTime" column="eventTime" />
+		<result property="guestNum" column="guestNum" />
+		<result property="spaceTip" column="spaceTip" />		
+		<result property="description" column="description" />
+		<association property="department" column="assigned_department_id" javaType="Department">
+			<id property="id" column="assigned_department_id" />
+			<result property="name" column="department_name" />
+		</association>
+		<association property="owner" column="case_owner" javaType="User">
+			<id property="id" column="case_owner" />
+			<result property="name" column="case_owner_name" />
+		</association>
+		<association property="paper" column="paper_id" javaType="Paper">
+			<id property="id" column="paper_id" />
+			<collection property="questions" column="paper_id" ofType="Question" select="selectQuestions"/>
+		</association>	
+		<association property="space" column="space_id" javaType="Spaces">
+			<id property="id" column="space_id" />
+			<result property="space_name" column="space_name" />
+		</association>	
+		<association property="status" column="status" javaType="Category">
+			<id property="id" column="status" />
+			<result property="name" column="status_name" />
+		</association>	
+		<association property="businessType" column="business_type" javaType="Category">
+			<id property="id" column="business_type" />
+			<result property="name" column="business_type_name" />
+		</association>
+		<collection property="statkeholders" column="id" ofType="Stakeholder" select="getStakeholders"/>
+	</resultMap>
+	
+	<select id="selectQuestions" resultType="Question">
+	    select q.question as question, q.question_id as id, q.question_type as questionType, q.question_options as questionOptions, q.trashed as trashed, pq.position as position
+	    from questions q, paper_questions pq 
+	    where q.question_id=pq.question_id and pq.paper_id=#{paper_id} order by pq.position
+	</select>
+	
+	<select id="get" resultMap="caseDetailMap">
+		select 
+		c.case_id as id, c.case_title as title, c.created_time as createdTimestamp, space_tip as spaceTip,
+		c.event_time as eventTime, c.guest_num as guestNum, c.description,
+		c.assigned_department_id, c.case_owner, c.paper_id , c.space_id, c.status, c.business_type,
+		cg.name as business_type_name
+		from cases c
+		left join category cg on c.business_type=cg.id
+		where c.case_id=#{id}
+	</select>
+	
+	<select id="search" parameterType="map" resultMap="caseDetailMap">
+		select 
+		c.case_id as id, c.case_title as title, c.created_time as createdTimestamp, 
+		c.event_time as eventTime, c.guest_num as guestNum,c.description as description,c.space_tip as spaceTip,
+		d.department_id as assigned_department_id,d.name as department_name,
+		uo.id as case_owner,uo.name as case_owner_name,p.paper_id as paper_id,sp.space_id as space_id,sp.space_name as space_name,
+		cb.id as business_type,cb.name as business_type_name,cs.id as status,cs.name as status_name
+		from cases c
+		left join category cb on c.business_type=cb.id
+		left join category cs on c.status=cs.id
+		left join users uo on c.case_owner=uo.id 
+		left join papers p on c.paper_id=p.paper_id
+		left join spaces sp on c.space_id=sp.space_id
+		left join departments d on c.assigned_department_id=d.department_id 
+		<where> 
+			<if test="department_id != null">
+				and c.assigned_department_id like '${department_id}%'
+			</if>
+			<if test="owner_id != null">
+				and c.case_owner like '${owner_id}%'
+			</if>
+			<if test="business_type != null">
+				and c.business_type like '${business_type}%'
+			</if>
+			<if test="keyword != null">
+				and c.case_title||c.description||uo.name||sp.space_name like '%${keyword}%'
+			</if>
+		</where>
+		<if test="sort != null">
+			order by ${sort} desc
+		</if>
+		<if test="offset != null">
+			limit #{offset}, #{pageSize}
+		</if>
+	</select>
+	
+	<select id="getCount" parameterType="map" resultType="Long">
+		select count(0)
+		from cases c 
+		<where> 
+			<if test="department_id != null">
+				and c.assigned_department_id like '${department_id}%'
+			</if>
+			<if test="owner_id != null">
+				and c.case_owner like '${owner_id}%'
+			</if>
+			<if test="business_type != null">
+				and c.business_type like '${business_type}%'
+			</if>
+			<if test="keyword != null">
+				and  c.case_title||c.description like '%${keyword}%'
+			</if>
+		</where>
+	</select>
+	
+	<select id="getAnswers" resultType="Answer">
+		select pa.question_id as questionId , pa.answer 
+		from paper_answers pa  
+		where pa.business_id='C'||#{id}
+	</select>
+	
+	<update id="update" parameterType="Case">
+		update cases set
+		case_title=#{title}, 
+		assigned_department_id=#{department.id},
+		case_owner=#{owner.id},
+		business_type=#{businessType.id},
+		event_time=#{eventTime},
+		guest_num=#{guestNum},
+		space_id=#{space.id},
+		description=#{description},
+		paper_id=#{paper.id},
+		status=#{status.id}		
+		where case_id=#{id}
+	</update>
+
+	<insert id="insert" parameterType="Case" useGeneratedKeys="true" keyProperty="id">
+		insert into cases (case_title,assigned_department_id,case_owner,business_type,event_time,guest_num,space_id,description,paper_id,status,created_time) 
+		values(#{title},#{department.id},#{owner.id},#{businessType.id},#{eventTime},#{guestNum},#{space.id},#{description},#{paper.id},#{status.id},now())
+	</insert>	
+	
+	<delete id="deleteAnswers" parameterType="Case">
+		delete from paper_answers where business_id='C'||#{id} and paper_id=#{paper.id}
+	</delete>
+	<insert id="insertAnswers" parameterType="map">
+	    insert into paper_answers(business_id, paper_id, question_id, answer) values
+	    (concat('C',#{caseId}),#{paperId},#{question.id},#{question.questionOptions});
+	</insert>
+	<select id="getDefaultCharacters" resultType="Category">
+		select cc.name, cc.id  
+		from business_type_character btc
+		left join category cc on btc.character_id=cc.id
+		 where btc.business_type=#{id} 
+	</select>	
+	<select id="getStakeholders" resultMap="StakeholderMap">
+		select concat(cu.customer_id, c.id) as myid, cc.description as stakeholder_description, c.name as characterType, c.id as characterId,
+		cu.customer_id,cu.customer_name, cu.customer_phone,cu.customer_sex,cu.job,cu.weixin, 
+		cu.weibo, cu.qq,cu.birthday, cu.favorite, cu.description
+		from case_customers cc
+		left join category c on cc.character_id=c.id
+		left join customer cu on cc.customer_id=cu.customer_id
+		 where cc.case_id=#{id} 
+	</select>
+	<resultMap id="StakeholderMap" type="Stakeholder">
+	    <id property="key" column="myid" />
+	    <result property="description" column="stakeholder_description"/>
+		<association property="character" column="characterId" javaType="Category">
+			<id property="id" column="characterId" />
+			<result property="name" column="characterType" />
+		</association>
+		<association property="customer" column="customer_id" javaType="Customer">
+			<id property="id" column="customer_id" />
+			<result property="customerName" column="customer_name" />
+			<result property="customerPhone" column="customer_phone" />
+			<result property="customerSex" column="customer_sex" />			
+			<result property="job" column="job" />
+			<result property="weixin" column="weixin" />
+			<result property="weibo" column="weibo" />
+			<result property="qq" column="qq" />
+			<result property="birthday" column="birthday" />
+			<result property="favorite" column="favorite" />
+			<result property="description" column="description" />
+		</association>
+	</resultMap>	
+
+	<insert id="insertCaseCustomers" parameterType="map">
+		insert into case_customers(case_id, character_id, customer_id, description) 
+		values(#{caseId}, #{characterId},#{customerId},#{description})
+	</insert>	
+	<update id="updateCaseCustomers" parameterType="map">
+		update case_customers set description=#{description}
+		where case_id=#{caseId} and character_id=#{characterId} and customer_id=#{customerId}
+	</update>		
+</mapper> 

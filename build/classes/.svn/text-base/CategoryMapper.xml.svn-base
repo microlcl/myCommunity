@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.eastteam.myprogram.dao.CategoryMybatisDao">    
+	<select id="search" resultType="Category">
+		select id, pid, name, trashed,created_date as createdDate,comment from category
+	</select>
+	<insert id="insert" parameterType="Category">
+		insert into category (
+		id, pid, name, trashed,created_date,comment)
+		values (
+		#{id}, #{pid}, #{name}, #{trashed}, now(),#{comment})
+	</insert>
+	<update id="update" parameterType="Category">
+		update category set
+		pid=#{pid}, 
+		name=#{name}, 
+		trashed=#{trashed},
+		created_date=now(),
+		comment=#{comment}
+		where id=#{id}
+	</update>
+	<select id="getMaxSubId" resultType="String">
+		select id from category where pid=#{pid} order by substring(id,#{pos})+0 desc limit 0,1
+	</select>
+	<select id="getCount" resultType="int">
+		select count(0) from category where id=#{id}
+	</select>
+	<select id="getCategoryName" resultType="String">
+		select name from category 
+		where id=#{id}
+	</select>
+	<delete id="delete">
+		delete from category where id=#{id}
+	</delete>
+	<select id="getSubNodeCount" resultType="int">
+		select count(0) from category where pid=#{pid}
+	</select>
+	
+	
+	
+	<resultMap id="categoryDetailMap" type="CategoryLiteBean">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<collection property="children" column="id" ofType="CategoryLiteBean" select="selectCategory">	
+		    <id property="id" column="id" />
+			<result property="name" column="name" />
+			<collection property="children" column="id" ofType="CategoryLiteBean" select="selectCategory"/>				
+		</collection>
+	</resultMap>
+	
+	
+	<select id="selectCategory" resultMap="categoryDetailMap">
+		select id, name
+		from category
+		where pid=#{id}
+	</select>
+	<select id="getAll" resultMap="categoryDetailMap">
+		select id, name
+		from category
+		where id=#{id}
+	</select>
+	<select id="getFirstLevelChildren" resultType="CategoryLiteBean">
+		select id, name
+		from category
+		where pid=#{id}
+	</select>
+	<select id="getFunctionCategorys" resultType="CategoryLiteBean">
+		select category_id as id
+		from function_category
+		where function_id=#{functionId}
+	</select>
+	
+</mapper> 

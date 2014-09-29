@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.eastteam.myprogram.dao.HolderMybatisDao">
+
+	<!-- 插入场馆-->
+	<insert id="saveHolder" parameterType="Holders" useGeneratedKeys="true" keyProperty="id" >
+		insert into Holders (holder_name,address,level,contact,phone,description)
+		values(#{holder_name},#{address},#{level},#{contact},#{phone},#{description});
+	</insert>
+	
+	<!-- 插入场地-->
+	<insert id="saveSpace" parameterType="Spaces" useGeneratedKeys="true" keyProperty="id" >
+		insert into Spaces (holder_id,space_name,floor,volume,hall_height,stage_length,stage_width,stage_height,description)
+		values(#{holders.id},#{space_name},#{floor},#{volume},#{hall_height},#{stage_length},#{stage_width},#{stage_height},#{description});
+	</insert>
+	
+	<!-- 插入场地类型-->
+	<insert id="saveSpaceAttribute" parameterType="SpaceAttribute">
+		insert into space_attribute (space_id,attribute_id)
+		values(#{space_id},#{attribute_id});
+	</insert>
+	
+	<!-- 删除场地类型-->
+	<delete id="deleteSpaceAttribute" parameterType="SpaceAttribute">
+		delete from space_attribute where space_id=#{space_id};
+	</delete>
+	
+	<select id="getSpaceAttributeBySpaceId"  resultType="SpaceAttribute">
+	    select space_id ,attribute_id
+	    from  space_attribute 
+	    where space_id=#{space_id};
+	</select>
+	
+	 	<!-- 修改场地-->
+	<update id="update" parameterType="Spaces">
+		update Spaces set holder_id=#{holder_id}, space_name=#{space_name}, floor=#{floor} ,volume=#{volume},hall_height=#{hall_height} ,
+		stage_length=#{stage_length},stage_width=#{stage_width} ,stage_height=#{stage_height},attributes=#{attributes},description=#{description}
+		where space_id=#{id};
+	</update>
+	
+	<resultMap id="spacetDetailMap" type="Spaces">
+		<id property="id" column="space_id" />
+		<result property="space_name" column="space_name" />
+		<result property="floor" column="floor" />
+		<result property="volume" column="volume" />
+		<result property="hall_height" column="hall_height" />
+		<result property="stage_length" column="stage_length" />
+		<result property="stage_width" column="stage_width" />
+		<result property="stage_height" column="stage_height" />
+		<result property="description" column="description" />
+		<association property="holders" column="holder_id" javaType="Holders" select="selectHolders">
+			<id property="id" column="holder_id" />
+			<result property="holder_name" column="holder_name" />
+			<result property="address" column="address" />
+			<result property="level" column="level" />
+			<result property="contact" column="contact" />
+			<result property="phone" column="phone" />
+			<result property="description" column="description" />
+		</association>
+	</resultMap>
+	<select id="selectHolders" resultType="Holders">
+	    select holder_id as id ,holder_name,address,level,contact,phone,description
+	    from  holders h 
+	    where h.holder_id=#{holder_id} 
+	</select>
+	<select id="search" parameterType="map" resultMap="spacetDetailMap">
+		select s.space_id,s.holder_id,s.space_name as space_name,s.floor,s.volume as volume,s.hall_height,s.stage_length,s.stage_width,s.stage_height,
+		s.description,h.holder_id,h.holder_name as holder_name,h.address,h.level as level,h.contact,h.phone,h.description
+		from spaces s left join holders h on s.holder_id = h.holder_id
+		<where>
+			<if test="space_name != null">
+				and s.space_name like '%${space_name}%'
+			</if>
+			<if test="holder_name != null">
+				and h.holder_name like '%${holder_name}%'
+			</if>
+			<if test="level != null">
+				and h.level like '%${level}%'
+			</if>
+			<if test="keyword != null">
+				and s.space_name||h.holder_name||s.description||h.description like '%${keyword}%'
+			</if>
+		</where>
+		<if test="sort != null">
+			order by ${sort} desc
+		</if>
+		<if test="offset != null">
+			limit #{offset}, #{pageSize}
+		</if>
+	</select>
+	<select id="getCount" parameterType="map" resultType="Long">
+		select count(0)
+		from spaces s left join holders h on s.holder_id = h.holder_id
+		<where>
+				<if test="space_name != null">
+				and s.space_name like '%${space_name}%'
+			</if>
+			<if test="holder_name != null">
+				and h.holder_name like '%${holder_name}%'
+			</if>
+			<if test="level != null">
+				and h.level like '%${level}%'
+			</if>
+			<if test="keyword != null">
+				and s.space_name||h.holder_name||s.description||h.description like '%${keyword}%'
+			</if>
+		</where>
+	</select>
+	<select id="getSpaces" resultMap="spacetDetailMap">
+		select *
+		from spaces s 
+		where s.space_id=#{id}
+	</select>
+	<select id="getHolders" parameterType="map" resultMap="HolderDetailMap">
+		select h.holder_id,h.holder_name,h.address,h.level,h.contact,h.phone,h.description
+		from holders h 
+		where h.holder_id=#{id}
+	</select>
+	<resultMap id="HolderDetailMap" type="Holders">
+		<id property="id" column="holder_id" />
+		<result property="holder_name" column="holder_name" />
+		<result property="address" column="address" />
+		<result property="level" column="level" />
+		<result property="contact" column="contact" />
+		<result property="phone" column="phone" />
+		<result property="description" column="description" />
+		<collection property="spaces"  column="holder_id" ofType="Spaces" select="selectSpaces">
+		</collection>
+	</resultMap>
+	<select id="selectSpaces" resultType="Spaces">
+	   select s.space_id as id,s.space_name ,s.floor,s.volume ,s.hall_height,s.stage_length,s.stage_width,s.stage_height,s.description 
+		from spaces s
+	    where s.holder_id=#{holder_id} order by space_name
+	</select>
+	
+	<!-- 修改Holders-->
+	<update id="updateHolder" parameterType="Holders">
+		update holders set holder_name=#{holder_name}, address=#{address}, level=#{level},contact=#{contact}, phone=#{phone}, description=#{description}
+		 where holder_id=#{id};
+	</update>
+	
+	<!-- 删除deleteSpacesByHolderId-->
+	<delete id="deleteSpacesByHolderId" parameterType="Spaces">
+		delete from spaces where holder_id=#{id};
+	</delete>
+	
+</mapper> 

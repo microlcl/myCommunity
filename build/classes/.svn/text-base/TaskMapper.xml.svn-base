@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.eastteam.myprogram.dao.TaskMybatisDao">
+
+	<resultMap id="taskDetailMap" type="Task">
+		<id property="id" column="task_id" />
+		<result property="summary" column="summary" />
+		<result property="description" column="description" />
+		<result property="dueDate" column="due_date" />
+		<result property="timeRemaining" column="time_remaining" />
+		<result property="createdTimestamp" column="created_timestamp" />
+		<result property="progress" column="progress" />
+		<association property="department" javaType="Department">
+			<id property="id" column="department_id" />
+			<result property="name" column="department_name" />
+			<result property="description" column="department_description" />
+		</association>
+		<association property="taskType" javaType="Category">
+			<id property="id" column="cb_id" />
+			<result property="name" column="cb_name" />
+		</association>
+		<association property="status" javaType="Category">
+			<id property="id" column="cs_id" />
+			<result property="name" column="cs_name" />
+		</association>
+		<association property="priority" javaType="Category">
+			<id property="id" column="cp_id" />
+			<result property="name" column="cp_name" />
+		</association>
+		<association property="owner" javaType="User">
+			<id property="id" column="uo_id" />
+			<result property="name" column="uo_name" />
+		</association>
+		<association property="createdBy" javaType="User">
+			<id property="id" column="uc_id" />
+			<result property="name" column="uc_name" />
+		</association>
+		<collection property="parent" column="parent_id" javaType="Task" select="selectTask">
+			<id property="id" column="id" />
+			<result property="summary" column="summary" />
+			<collection property="parent" column="parent_id" javaType="Task" select="selectTask"/>			
+		</collection>
+		<collection property="comments" column="task_id" ofType="Comment" select="selectcomments">
+		</collection>
+		<collection property="cases" column="task_id" ofType="Case" select="selectCases">	
+		</collection>
+		<collection property="subUsers" column="task_id" ofType="User" select="selectUser">	
+		</collection>
+		<collection property="attachments" column="task_id" ofType="Attachment" select="selectatTachments">	
+		</collection>
+	</resultMap>
+	
+	<resultMap type="Comment" id="commentMap">
+			<id property="id" column="id" />
+			<result property="comment" column="comment" />
+			<result property="createdTimestamp"  column="createdTimestamp" />
+			<association property="user" column="c_user_id" javaType="User">
+			 <id property="id" column="c_user_id" />
+			 <result property="name" column="u_name" />
+			 </association>
+	</resultMap>
+	
+	<resultMap type="Attachment" id="tachmentsMap">
+			<id property="id" column="attachment_id" />
+			<result property="path" column="path" />
+			<result property="fileSize" column="file_size" />
+			<result property="uploadedTimestamp"  column="uploaded_timestamp" />
+			<association property="user" column="a_user_id" javaType="User">
+			 <id property="id" column="a_user_id" />
+			 <result property="name" column="u_name" />
+			 </association>
+	</resultMap>
+	
+	<resultMap type="Case" id="caseMap">
+			<id property="id" column="case_id" />
+			<result property="title" column="case_title" />
+	</resultMap>
+	
+	<resultMap type="User" id="userMap">
+			<id property="id" column="id" />
+			<result property="name" column="name" />
+	</resultMap>
+	
+	<select id="selectUser" resultMap="userMap">
+	   select u.id as id,u.name as name
+	   from users u,task_subscribers ts
+	   where  u.id = ts.user_id
+	   		and ts.task_id=#{task_id}
+	</select>
+	
+	<select id="selectCases" resultMap="caseMap">
+	   select c.case_id as case_id,c.case_title as case_title 
+	   from cases c,case_task ct
+	   where  c.case_id = ct.case_id
+	   		and ct.task_id=#{task_id}
+	</select>
+	
+	<select id="selectcomments" resultMap="commentMap">
+	   select c.comment_id as id,c.comment as comment,c.created_timestamp as createdTimestamp,c.user_id as c_user_id,u.name as u_name
+	   from comments c,task_comments tc,users u 	   
+	   where c.comment_id = tc.comment_id
+	        and tc.task_id=#{task_id}
+	        and c.user_id = u.id 	       
+	</select>
+	
+	<select id="selectatTachments" resultMap="tachmentsMap">
+	   select a.attachment_id as attachment_id,a.uploaded_timestamp as uploaded_timestamp,a.path as path,
+	   		  a.file_size as file_size,a.user_id as a_user_id,u.name as u_name
+	   from attachments a,task_attachments ta,users u 	   
+	   where a.attachment_id = ta.attachment_id
+	        and ta.task_id=#{task_id}
+	        and a.user_id = u.id 	       
+	</select>	
+	
+	<select id="getCount" parameterType="map" resultType="Long">
+		select count(0)
+		from task t 
+		<where>	
+		<if test="department_id != null">
+				and t.department_id like '${department_id}%'
+		</if>
+		<if test="owner_id != null">
+				and t.owner like '${owner_id}%'
+		</if>
+		<if test="statusId != null">
+				and t.status like '${statusId}%'
+		</if>
+		<if test="keyword != null">
+				and t.summary||t.description like '%${keyword}%'
+		</if>			
+		</where>
+	</select>
+	
+	<select id="search" parameterType="map" resultMap="taskDetailMap">
+		select t.task_id,t.parent_id,t.summary,t.description,t.department_id,t.progress,t.due_date,t.time_remaining,
+		t.created_timestamp,cb.id as cb_id,cs.id as cs_id,uo.id as uo_id,uc.id as uc_id,cp.id as cp_id,
+		cb.name as cb_name,cs.name as cs_name,uo.name as uo_name,uc.name as uc_name,cp.name as cp_name,
+		d.department_id,d.name as department_name,d.description as department_description
+		from task t
+		left join category cb on t.task_type=cb.id
+		left join category cs on t.status=cs.id
+		left join users uo on t.owner=uo.id 
+		left join users uc on t.created_by=uc.id 
+		left join category cp on t.priority=cp.id 
+		left join departments d on t.department_id=d.department_id 
+		left join case_task ct on t.task_id=ct.task_id
+		left join task_subscribers ts on t.task_id=ts.task_id
+		<where>
+			<if test="department_id != null">
+				and t.department_id like '${department_id}%'
+			</if>
+			<if test="owner_id != null">
+				and t.owner like '${owner_id}%'
+			</if>
+			<if test="statusId != null">
+				and t.status like '${statusId}%'
+			</if>
+			<if test="caseId != null">
+				and ct.case_id = #{caseId}
+			</if>			
+			<if test="keyword != null">
+				and t.summary||t.description like '%${keyword}%'
+			</if>
+			<if test="userId != null">
+				and ts.user_id=#{userId}
+			</if>
+		</where>
+		<if test="sort != null">
+			order by ${sort} desc
+		</if>
+	</select>
+	
+	
+	<select id="selectTask" resultType="Task">
+	    select task_id as id,summary
+	    from  task  
+	    where task_id=#{parent_id} 
+	</select>
+	<!-- 插入任务-->
+	<insert id="save" parameterType="Task" useGeneratedKeys="true" keyProperty="id" >
+		insert into Task  (parent_id,summary,description,task_type,status,department_id,owner,progress,priority,due_date,time_remaining,created_timestamp,created_by)
+		values(#{parent.id},#{summary},#{description},#{taskType.id},#{status.id},#{department.id},#{owner.id},#{progress},#{priority.id},#{dueDate},#{timeRemaining},#{createdTimestamp},#{createdBy.id});
+	</insert>
+	
+	<!-- 插入附件-->
+	<insert id="saveAttachment" parameterType="Attachment" useGeneratedKeys="true" keyProperty="id" >
+		insert into attachments  (user_id,uploaded_timestamp,path,file_size)
+		values(#{user.id},#{uploadedTimestamp},#{path},#{fileSize});
+	</insert>
+	
+	<!-- 插入附件-->
+	<insert id="saveTaskAttachments" parameterType="map">
+		insert into task_attachments  (attachment_id,task_id)
+		values(#{attachmentId},#{taskId});
+	</insert>
+	
+	<!-- 插入task_subscribers-->
+	<insert id="saveTaskSubscriber" parameterType="map">
+		insert into task_subscribers  (task_id,user_id)
+		values(#{task_id},#{user_id});
+	</insert>
+	
+	<!-- 插入task_comments-->
+	<insert id="saveTaskComment" parameterType="map">
+		insert into task_comments  (comment_id,task_id)
+		values(#{comment_id},#{task_id});
+	</insert>
+	
+	<!-- 插入case_task-->
+	<insert id="saveCaseTask" parameterType="map">
+		insert into case_task  (case_id,task_id)
+		values(#{case_id},#{task_id});
+	</insert>
+	
+	<insert id="updateCaseTask" parameterType="map">
+		update case_task  set case_id=#{case_id}
+		where task_id=#{task_id};
+	</insert>
+	
+	<!-- 插入comments-->
+	<insert id="saveComments" parameterType="Comment" useGeneratedKeys="true" keyProperty="id" >
+		insert into comments(user_id,comment,created_timestamp)
+		values(#{user.id},#{comment},#{createdTimestamp});
+	</insert>
+	
+	<!-- 获取task -->
+	<select id="getTask" resultMap="taskDetailMap">
+		select t.task_id,t.parent_id,t.summary,t.description,t.department_id,t.progress,t.due_date,t.time_remaining,
+		t.created_timestamp,cb.id as cb_id,cs.id as cs_id,uo.id as uo_id,uc.id as uc_id,cp.id as cp_id,
+		cb.name as cb_name,cs.name as cs_name,uo.name as uo_name,uc.name as uc_name,cp.name as cp_name,
+		d.department_id,d.name as department_name,d.description as department_description
+		from task t
+		left join category cb on t.task_type=cb.id
+		left join category cs on t.status=cs.id
+		left join users uo on t.owner=uo.id 
+		left join users uc on t.created_by=uc.id 
+		left join category cp on t.priority=cp.id 
+		left join departments d on t.department_id=d.department_id 
+		where t.task_id=#{id}
+	</select>
+	
+	<!-- 修改Task-->
+	<update id="update" parameterType="Task">
+		update task set summary=#{summary}, description=#{description}, task_type=#{taskType.id},status=#{status.id}, department_id=#{department.id}, owner=#{owner.id},
+						progress=#{progress}, priority=#{priority.id}, due_date=#{dueDate}, time_remaining=#{timeRemaining}, created_timestamp=#{createdTimestamp},created_by=#{createdBy.id}
+		 where task_id=#{id};
+	</update>
+	
+	<!-- 删除subscriber-->
+	<delete id="deleteSubscriber" parameterType="Task">
+		delete from task_subscribers where task_id=#{taskId};
+	</delete>
+	
+	
+	
+	<select id="getAllComment" parameterType="map" resultType="Long">
+		select count(0) from comments
+	</select>
+	
+	<select id="getAllTaskComment" parameterType="map" resultType="Long">
+		select count(0) from task_comments
+	</select>
+	<!-- 删除Attachment-->
+	<delete id="deleteAttachment" parameterType="long">
+		delete from attachments where attachment_id=#{id};
+	</delete>
+	<!-- 删除TaskAttachment-->
+	<delete id="deleteTaskAttachment" parameterType="Task">
+		delete from task_attachments where attachment_id=#{attachmentId} and task_id=#{taskId};
+	</delete>
+	
+	<select id="getAttachmentByPath" parameterType="map" resultType="Attachment">
+		select a.attachment_id as id,a.uploaded_timestamp uploadedTimestamp,a.path path,a.file_size fileSize
+		from attachments a
+		<where>
+			<if test="path != null">
+				and a.path = '${path}'
+			</if>
+			<if test="id != null">
+				and a.attachment_id = '${id}'
+			</if>
+		</where>
+	</select>
+</mapper> 

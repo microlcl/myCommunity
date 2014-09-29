@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.eastteam.myprogram.dao.UserMybatisDao">
+    
+    
+    	<!-- 插入用户-->
+	<insert id="save" parameterType="User">
+		insert into users (id, name, password, sex, email, phone_num, address, hometown, birthday, register_date) 
+		values(#{id},#{name},#{password}, #{sex}, #{email}, #{phoneNum}, #{address}, #{hometown}, #{birthday}, now());
+	</insert>
+	<!--
+		获取用户: 输出直接映射到对象, login_name列要"as loginName"以方便映射 ,team_id as "team.id"创建team对象并赋值
+	-->
+	<!-- select id="get" parameterType="int" resultType="User">
+		select id, name, email,
+		login_name as loginName,
+		team_id as "team.id"
+		from ss_user
+		where id=#{id}
+	</select-->
+
+	<!-- 查询用户,演示: 1.输入用map传入多个参数 2.<where>语句, 智能添加where和and关键字 3.输出直接映射对象 -->
+	<select id="search" parameterType="map" resultMap="userDetailMap">
+		select u.id, u.name,u.password, u.sex,u.email,u.phone_num as phoneNum,u.address,u.hometown,u.birthday,
+		u.register_date as registerDate,u.status,u.comment,
+		d.department_id,d.name as department_name,d.description as department_description,
+		r.role_id, r.name as role_name,r.description as role_description 
+		from users u 
+	    left join departments d on u.department_id=d.department_id 
+	    left join user_role ur on u.id=ur.user_id
+	    left join roles r on ur.role_id=r.role_id
+		<where>
+		    <if test="id != null">
+				u.id=#{id}
+			</if>
+			<if test="name != null">
+				and u.name=#{name}
+			</if>
+			<if test="email != null">
+				and u.email=#{email}
+			</if>
+			<if test="role != null">
+				and r.name=#{role}
+			</if>
+			<if test="department_id != null">
+				and u.department_id like '${department_id}%'
+			</if>
+			
+		</where>
+		<if test="sort != null">
+			order by ${sort}
+		</if>
+		<if test="offset != null">
+			limit #{offset}, #{pageSize}
+		</if>
+	</select>
+	
+	
+	<select id="getCount" parameterType="map" resultType="Long">
+		select count(0) from (select u.id, u.name,u.password, u.sex,u.email,u.phone_num as phoneNum,u.address,u.hometown,u.birthday,
+		u.register_date as registerDate,u.status,u.comment,
+		d.department_id,d.name as department_name,d.description as department_description,
+		r.role_id, r.name as role_name,r.description as role_description 
+		from users u 
+	    left join departments d on u.department_id=d.department_id 
+	    left join user_role ur on u.id=ur.user_id
+	    left join roles r on ur.role_id=r.role_id
+		<where>
+		    <if test="id != null">
+				u.id=#{id}
+			</if>
+			<if test="name != null">
+				and u.name=#{name}
+			</if>
+			<if test="email != null">
+				and u.email=#{email}
+			</if>
+			<if test="role != null">
+				and r.name=#{role}
+			</if>
+			<if test="department_id != null">
+				and u.department_id like '${department_id}%'
+			</if>
+			
+		</where>) t
+	</select>
+
+	<resultMap id="userDetailMap" type="User">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="password" column="password" />
+		<result property="sex" column="sex" />
+		<result property="email" column="email" />
+		<result property="phoneNum" column="phoneNum" />
+		<result property="address" column="address" />
+		<result property="hometown" column="hometown" />
+		<result property="birthday" column="birthday" />
+		<result property="registerDate" column="registerDate" />
+		<result property="status" column="status" />
+		<result property="comment" column="comment" />
+		<association property="department" column="master_id" javaType="Department">
+			<id property="id" column="department_id" />
+			<result property="name" column="department_name" />
+			<result property="description" column="department_description" />
+		</association>
+		<collection property="roles" javaType="Role">
+			<id property="id" column="role_id" />
+			<result property="name" column="role_name" />
+			<result property="description" column="role_description" />
+			<collection property="functions" column="role_id" ofType="Function" select="selectFunction">				
+			</collection>
+		</collection>
+	</resultMap>
+	
+	
+	<select id="selectFunction" resultType="Function">
+	    select f.function_id as id, f.module_id as moduleId, f.name, f.description, f.path 
+	    from functions f, role_function rf 
+	    where rf.function_id=f.function_id and rf.role_id=#{role_id}
+	</select>
+	<select id="getUser" resultMap="userDetailMap">
+		select u.id, u.name,u.password, u.sex,u.email,u.phone_num as phoneNum,u.address,u.hometown,u.birthday,
+		u.register_date as registerDate,u.status,u.comment,
+		d.department_id,d.name as department_name,d.description as department_description,
+		r.role_id, r.name as role_name,r.description as role_description 
+		from users u 
+	    left join departments d on u.department_id=d.department_id 
+	    left join user_role ur on u.id=ur.user_id
+	    left join roles r on ur.role_id=r.role_id
+		where u.id=#{id}
+	</select>
+
+
+	<!-- 删除用户 -->
+	<!-- delete id="delete" parameterType="int">
+	     delete from ss_user where id=#{id}
+	</delete-->
+		<!-- 更新个人信息 -->
+	<update id="updatePersonalInfo" parameterType="User">
+		update users set name=#{name}, password=#{password}, sex=#{sex}, email=#{email}, phone_num=#{phoneNum}, address=#{address}, hometown=#{hometown}, birthday=#{birthday}
+		where id=#{id}
+	</update>
+	<!-- 更新用户信息 -->
+	<update id="updateUser" parameterType="User">
+		update users set name=#{name}, sex=#{sex}, department_id=#{department.id}, email=#{email}, phone_num=#{phoneNum}, address=#{address}, hometown=#{hometown}, birthday=#{birthday}, status=#{status}, comment=#{comment}
+		where id=#{id}
+	</update>
+	<!-- 删除用户role -->
+	<delete id="deleteUserRole" parameterType="User">
+		delete from user_role where user_id=#{id}
+	</delete>
+	<!-- 更新用户role -->
+	<insert id="updateUserRole" parameterType="Map">
+		insert into user_role(user_id, role_id) values
+		<foreach collection="roleList" item="role" separator="," >
+			(#{userId},#{role})
+		</foreach>
+	</insert>
+	<!-- 验证用户是否已被注册 -->
+	<select id="findByLoginName"  resultType="User">
+		select r.id
+		from users r
+		where r.id=#{loginName}
+	</select>
+	
+	
+	<select id="findByDepartment"  resultType="User">
+		select r.id,r.name
+		from users r
+		where r.department_id like #{departmentId}||'%'
+	</select>
+	
+</mapper> 

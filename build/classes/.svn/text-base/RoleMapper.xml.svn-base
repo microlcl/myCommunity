@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace必须指向Dao接口 -->
+<mapper namespace="com.eastteam.myprogram.dao.RoleMybatisDao">
+    
+    	<!-- 插入角色-->
+	<insert id="save" parameterType="Role" >
+		insert into roles (role_id, name, description) 
+		values(#{id},#{name},#{description});
+	</insert>
+	
+	 	<!-- 修改角色-->
+	<update id="update" parameterType="Role">
+		update roles set role_id=#{id}, name=#{name}, description=#{description} where role_id=#{id};
+	</update>
+	
+		<!-- 根据roleId删除roles-->
+	<delete id="delete" parameterType="String">
+		delete from roles where role_id=#{roleId};
+	</delete>
+	
+	 	<!-- 根据roleId删除role_function-->
+	<delete id="deleteRole_Function" parameterType="String">
+		delete from role_function where role_id=#{roleId};
+	</delete>
+	
+	 	<!-- 插入role_function-->
+	<insert id="saveRole_Function" parameterType="RoleFunction">
+		insert into role_function (role_id, function_id, description) 
+		values(#{role_id},#{function_id},#{description});
+	</insert>
+	
+	<!-- 查询角色,演示: 1.输入用map传入多个参数 2.<where>语句, 智能添加where和and关键字 3.输出直接映射对象 -->
+	<select id="search" parameterType="map" resultType="Role">
+		select role_id as id, name, description from roles
+		<where>
+		    <if test="id != null">
+				role_id=#{id}
+			</if>
+			<if test="name != null">
+				and name=#{name}
+			</if>
+			<if test="description != null">
+				and description=#{description}
+			</if>
+		</where>
+		<if test="sort != null">
+			order by ${sort}
+		</if>
+		<if test="offset != null">
+			limit #{offset}, #{pageSize}
+		</if>
+	</select>
+	
+	
+	<select id="getCount" parameterType="map" resultType="Long">
+		select count(0) from roles
+		<where>
+		    <if test="id != null">
+				role_id=#{id}
+			</if>
+			<if test="name != null">
+				and name=#{name}
+			</if>
+			<if test="description != null">
+				and description=#{description}
+			</if>
+		</where>
+	</select>
+	
+	<resultMap id="roleDetailMap" type="Role">
+		<id property="id" column="role_id" />
+		<result property="name" column="name" />
+		<result property="description" column="description" />
+		<collection property="functions" column="role_id" ofType="Function" select="selectFunction">				
+		</collection>
+		<!-- collection property="functions" javaType="Function">
+			<id property="id" column="function_id" />
+			<result property="name" column="function_name" />
+			<result property="description" column="function_description" />
+			<result property="moduleId" column="module_id" />
+			<collection property="functions" column="role_id" ofType="Function" select="selectFunction">				
+			</collection>
+		</collection-->
+		
+	</resultMap>
+	
+	<select id="selectFunction" resultType="Function">
+	    select f.function_id as id, f.module_id as moduleId, f.name, f.description, f.path 
+	    from functions f, role_function rf 
+	    where rf.function_id=f.function_id and rf.role_id=#{role_id}
+	</select>
+	
+	<select id="getRole" resultMap="roleDetailMap">
+		select r.role_id, r.name, r.description
+		from roles r
+		where r.role_id=#{id}
+	</select>
+	
+	<select id="selectAll" resultType="Role">
+		select role_id as id, name from roles
+	</select>
+	
+	<resultMap id="moduleDetailMap" type="Module">
+		<id property="module_id" column="module_id" />
+		<result property="pid" column="pid" />
+		<result property="name" column="name" />
+		<result property="description" column="description" />
+		<result property="path" column="path" />
+		<collection property="functions" column="module_id" ofType="Function" select="mouduleSelectFunction">				
+		</collection>
+		<collection property="modules" column="pid" ofType="Module" select="mouduleSelectModule">				
+		</collection>
+	</resultMap>
+	
+	<select id="mouduleSelectFunction" resultType="Function">
+	    select f.function_id as id, f.module_id as moduleId, f.name, f.description, f.path 
+	    from functions f
+	    where f.module_id=#{module_id}
+	</select>
+	
+	<select id="mouduleSelectModule" resultType="Module">
+	    select m.module_id, m.pid, m.name, m.description, m.path
+	    from modules m
+	    where m.module_id=#{pid}
+	</select>
+	
+	<select id="getAllModule" resultMap="moduleDetailMap">
+	  select m.module_id, m.pid, m.name, m.description, m.path
+	    from modules m
+	</select>
+</mapper> 

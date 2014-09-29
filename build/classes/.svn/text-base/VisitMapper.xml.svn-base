@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eastteam.myprogram.dao.VisitMybatisDao">
+	<select id="search" parameterType="map" resultMap="visitDetailMap">
+		select v.visit_id as visit_id, v.customer_id as customer_id, ct.customer_name as customer_name, v.visit_stime visit_stime, v.visitor_num as visitor_num, v.assigned_department_id as assigned_department_id, v.recipient, v.operator, v.case_id as case_id, v.is_visited as is_visited, v.comment as comment, v.paper_id paper_id, c.case_title as case_title, c.event_time, cg.name as visit_type, cg.id as visit_type_id, cb.id as business_type_id, cb.name as business_type
+		from visit_activities v
+		left join cases c on v.case_id= c.case_id
+		left join category cg on v.visit_type=cg.id
+		left join category cb on v.business_type=cb.id
+		left join customer ct on v.customer_id=ct.customer_id
+		<where>
+			<if test="businessType != null">
+		        and cb.id = #{businessType}
+			</if>
+			<if test="visitType != null">
+				and v.visit_type=#{visitType}
+			</if>
+			<if test="isVisited != null">
+		        and v.is_visited like '${isVisited}'
+			</if>
+			<if test="dateFrom != null">
+				and v.visit_stime &gt;= #{dateFrom}
+			</if>
+			<if test="dateTo != null">
+				and v.visit_stime &lt;= dateadd(day,1,#{dateTo})
+			</if>			
+			<if test="keyword != null">
+				and (c.title like '%${keyword}%')
+			</if>
+			<if test="caseId != null">
+		        and v.case_id = #{caseId}
+			</if>			
+		</where>
+		<if test="sort != null">
+			order by ${sort} desc
+		</if>
+		<if test="offset != null">
+			limit #{offset}, #{pageSize}
+		</if>
+	</select>
+	
+	<resultMap id="visitDetailMap" type="VisitActivity">
+		<id property="id" column="visit_id"/>
+		<result property="visitTime" column="visit_stime"/>
+		<result property="isVisited" column="is_visited"/>
+		<result property="visitNum" column="visitor_num"/>
+		<result property="comment" column="comment"/>
+		<association property="customer" javaType="Customer">
+			<id property="id" column="customer_id" />
+			<result property="customerName" column="customer_name" />
+			<result property="customerPhone" column="customer_phone" />
+			<result property="job" column="job" />
+			<result property="weixin" column="weixin" />
+			<result property="weibo" column="weibo" />
+			<result property="qq" column="qq" />
+			<result property="favorite" column="favorite" />
+			<result property="description" column="description" />
+		</association>
+		<association property="visitType" javaType="Category">
+			<id property="id" column="visit_type_id" />
+			<result property="name" column="visit_type" />
+		</association>
+		<association property="businessType" javaType="Category">
+			<id property="id" column="business_type_id" />
+			<result property="name" column="business_type" />
+		</association>
+		<association property="thisCase" javaType="Case">
+			<id property="id" column="case_id" />
+			<result property="title" column="case_title" />
+			<result property="eventTime" column="event_time"/>
+			<result property="guestNum" column="guest_num"/>
+			<result property="spaceTip" column="space_tip"/>
+		</association>
+		<association property="recipient" javaType="User">
+			<id property="id" column="recipient" />
+		</association>	
+		<association property="operator" javaType="User">
+			<id property="id" column="operator" />
+		</association>	
+		<association property="paper" column="paper_id" javaType="Paper">
+			<id property="id" column="paper_id"/>
+			<result property="paperName" column="paper_name"/>
+			<collection property="questions" column="paper_id" ofType="Question" select="selectQuestions"/>
+		</association>		
+	</resultMap>
+	
+	<select id="getCount" parameterType="map" resultType="Long">
+		select count(0) from (select v.visit_id as visit_id, v.customer_id as customer_id, v.visit_stime visit_stime, v.visitor_num as visitor_num, v.assigned_department_id as assigned_department_id, v.recipient, v.operator, v.case_id as case_id, v.is_visited as is_visited, v.comment as comment, v.paper_id paper_id, c.case_title as case_title, c.guest_num, cg.name as visit_type, c.space_tip, cg.id as visit_type_id, cb.id as business_type_id, cb.name as business_type
+		from visit_activities v
+		left join cases c on v.case_id= c.case_id
+		left join category cg on v.visit_type=cg.id
+		left join category cb on v.business_type=cb.id
+		left join customer ct on v.customer_id=ct.customer_id
+		<where>
+			<if test="businessType != null">
+		        and cb.id = #{businessType}
+			</if>
+			<if test="visitType != null">
+				and v.visit_type=#{visitType}
+			</if>
+			<if test="isVisited != null">
+		        and v.is_visited like '${isVisited}'
+			</if>
+			<if test="dateFrom != null">
+				and v.visit_stime &gt;= #{dateFrom}
+			</if>
+			<if test="dateTo != null">
+				and v.visit_stime &lt;= dateadd(day,1,#{dateTo})
+			</if>			
+			<if test="keyword != null">
+				and (c.title like '%${keyword}%')
+			</if>
+			<if test="caseId != null">
+		        and v.case_id = #{caseId}
+			</if>
+		</where>) t
+	</select>
+	
+	<insert id="insertCustomer" parameterType="Customer" useGeneratedKeys="true" keyProperty="id">
+		insert into customer (customer_name, job, weixin, customer_phone, weibo, qq, favorite, description) values (#{customerName}, #{job}, #{weixin}, #{customerPhone}, #{weibo}, #{qq}, #{favorite}, #{description});
+	</insert>
+	
+	<insert id="insertCase" parameterType="Case" useGeneratedKeys="true" keyProperty="id">
+		insert into cases (business_type, case_title, created_time, event_time, guest_num, space_tip, business_code, space_id) 
+		values (#{businessType.id}, #{title}, now(), #{eventTime}, #{guestNum}, #{spaceTip}, 'C', #{space.id});
+	</insert>
+	
+	<insert id="insertVisit" parameterType="VisitActivity" useGeneratedKeys="true" keyProperty="id">
+		insert into visit_activities (customer_id, visit_type, visitor_num,  visit_stime, operator, business_type, case_id, is_visited, comment, paper_id) 
+		values (#{customer.id}, #{visitType.id}, #{visitNum}, #{visitTime}, #{operator.id}, #{businessType.id}, #{thisCase.id}, #{isVisited}, #{comment}, #{paper.id});
+	</insert>
+	
+	<select id="selectCustomers" resultType="Customer" >
+		select customer_name as customerName, customer_id as id from customer
+	</select>
+	
+	<select id="selectCase" parameterType="Long" resultType="Case">
+		select case_id as id, case_title as title, guest_num as guestNum, event_time as eventTime, space_tip as spaceTip
+		from cases
+		where case_id = #{caseId}
+	</select>
+	
+	<select id="selectVisit" parameterType="Long" resultMap="visitDetailMap">
+		select v.visit_id as visit_id, v.customer_id as customer_id, ct.customer_name as customer_name, ct.customer_phone as customer_phone, ct.job as job, ct.weixin as weixin, ct.weibo as weibo, ct.qq as qq, ct.favorite as favorite, ct.description as description, v.visit_stime visit_stime, v.visitor_num as visitor_num, v.assigned_department_id as assigned_department_id, v.recipient, v.operator, v.case_id as case_id, v.is_visited as is_visited, v.comment as comment, v.paper_id as paper_id, p.paper_name as paper_name, c.case_title as case_title, c.event_time, c.guest_num, c.space_tip, cg.name as visit_type, cg.id as visit_type_id, cb.id as business_type_id, cb.name as business_type
+		from visit_activities v
+		left join papers p on p.paper_id=v.paper_id
+		left join cases c on v.case_id= c.case_id
+		left join category cg on v.visit_type=cg.id
+		left join category cb on v.business_type=cb.id
+		left join customer ct on v.customer_id=ct.customer_id
+		where v.visit_id=#{visitId};
+	</select>
+	
+	<select id="selectSpaces" resultType="Spaces">
+	   select s.space_id as id,s.space_name ,s.floor,s.volume ,s.hall_height,s.stage_length,s.stage_width,s.stage_height,s.description 
+		from spaces s
+	    where s.space_id=#{spaceId}
+	</select>
+	
+	<select id="getSpacesByCase" resultType="Spaces">
+	   select s.space_id as id,s.space_name ,s.floor,s.volume ,s.hall_height,s.stage_length,s.stage_width,s.stage_height,s.description 
+		from spaces s
+		left join cases c on s.space_id=c.space_id
+	    where c.case_id=#{caseId}
+	</select>
+	
+	<update id="updateCustomer" parameterType="Customer">
+		update customer set customer_name = #{customerName}, job = #{job}, weixin = #{weixin}, weibo = #{weibo}, qq = #{qq}, favorite = #{favorite}, description = #{description}
+		where customer_id=#{id}
+	</update>
+	
+	<update id="updateCase" parameterType="Case">
+		update cases set business_type = #{businessType.id}, case_title = #{title}, event_time = #{eventTime}, guest_num = #{guestNum}, space_tip = #{spaceTip}, space_id= #{space.id}
+		where case_id=#{id}
+	</update>
+	
+	<update id="updateVisit" parameterType="map">
+		update visit_activities set visit_type = #{visitType}, visitor_num = #{visitNum}, visit_stime = #{visitTime}, business_type = #{businessType}, is_visited = #{isVisited}, comment = #{comment}, operator=#{operator}
+		where visit_id=#{visitId}
+	</update>
+	
+	<select id="getAnswers" resultType="Answer">
+		select pa.question_id as questionId , pa.answer 
+		from paper_answers pa  
+		where pa.business_id='V'||#{id}
+	</select>
+	
+	<select id="selectQuestions" resultType="Question">
+	    select q.question as question, q.question_id as id, q.question_type as questionType, q.question_options as questionOptions, q.trashed as trashed, pq.position as position
+	    from questions q, paper_questions pq 
+	    where q.question_id=pq.question_id and pq.paper_id=#{paper_id} order by pq.position
+	</select>
+	
+	<delete id="deleteVisitAnswers" parameterType="map">
+		delete from paper_answers where business_id='V'||#{visitId} and paper_id=#{paperId}
+	</delete>
+	<insert id="updateVisitAnswers" parameterType="map">
+	    insert into paper_answers(business_id, paper_id, question_id, answer) values
+	    (concat('V',#{visitId}),#{paperId},#{question.id},#{question.questionOptions});
+	</insert>
+</mapper>
