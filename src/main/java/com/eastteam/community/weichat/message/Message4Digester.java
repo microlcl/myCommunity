@@ -1,7 +1,7 @@
 package com.eastteam.community.weichat.message;
 
 /**
- * Digester解析xml专用Dojo
+ * Digester解析xml专用POJO
  * @author lichlei
  *
  */
