@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import com.eastteam.community.weichat.message.TextWeiChatMessage;
+import com.eastteam.community.weichat.message.Message4Digester;
 
 
 public class DigesterTest {	
@@ -21,7 +21,7 @@ public class DigesterTest {
 	public void testParser() throws IOException, SAXException {
 		InputStream in = FileUtils.getPackageResourceStream("/com/eastteam/community/utils/message.xml");
 		Digester digester = DigesterUtils.getDigester();
-		TextWeiChatMessage message =  (TextWeiChatMessage)digester.parse(in);
+		Message4Digester message =  (Message4Digester)digester.parse(in);
 		logger.info(message.toString());
 		assertNotNull(message);
 		assertNotNull(message.getFromUserName());

@@ -14,6 +14,26 @@ public class BaseWeiChatMessage {
 	private String createTime;
 	private String messageType;
 	private String messageId;
+	
+	public BaseWeiChatMessage() {
+		super();
+	}
+	
+	public BaseWeiChatMessage(String fromUserName, String toUserName, String createTime, String messageType, String messageId) {
+		this.fromUserName = fromUserName;
+		this.toUserName = toUserName;
+		this.createTime = createTime;
+		this.messageType = messageType;
+		this.messageId = messageId;		
+	}
+	
+	public BaseWeiChatMessage(Message4Digester message4Digester) {
+		this.fromUserName = message4Digester.getFromUserName();
+		this.toUserName = message4Digester.getToUserName();
+		this.createTime = message4Digester.getCreateTime();
+		this.messageType = message4Digester.getMessageType();
+		this.messageId = message4Digester.getMessageId();		
+	}	
 
 	public String getFromUserName() {
 		return fromUserName;

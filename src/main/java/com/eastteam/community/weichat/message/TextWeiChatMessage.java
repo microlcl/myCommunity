@@ -8,6 +8,11 @@ package com.eastteam.community.weichat.message;
 public class TextWeiChatMessage extends BaseWeiChatMessage{
 	
 	private String content;
+	
+	public TextWeiChatMessage(Message4Digester message4Digester) {
+		super(message4Digester);
+		this.content = message4Digester.getContent();
+	}
 
 	public String getContent() {
 		return content;

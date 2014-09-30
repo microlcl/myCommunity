@@ -3,12 +3,25 @@
   "http://commons.apache.org/digester/dtds/digester-rules-3.0.dtd">
 <digester-rules>
 	<pattern value="xml">
-		<object-create-rule classname="com.eastteam.community.weichat.message.TextWeiChatMessage" />
+		<object-create-rule classname="com.eastteam.community.weichat.message.Message4Digester" />
 		<bean-property-setter-rule pattern="ToUserName" propertyname="toUserName" />
 		<bean-property-setter-rule pattern="FromUserName" propertyname="fromUserName" />
 		<bean-property-setter-rule pattern="CreateTime" propertyname="createTime" />
 		<bean-property-setter-rule pattern="Content" propertyname="content" />
 		<bean-property-setter-rule pattern="MsgType" propertyname="messageType" />		
 		<bean-property-setter-rule pattern="MsgId" propertyname="messageId" />
+		
+		<bean-property-setter-rule pattern="PicUrl" propertyname="picUrl" />
+		<bean-property-setter-rule pattern="MediaId" propertyname="mediaId" />
+		<bean-property-setter-rule pattern="Format" propertyname="format" />
+		<bean-property-setter-rule pattern="ThumbMediaId" propertyname="thumbMediaId" />
+		<bean-property-setter-rule pattern="Location_X" propertyname="locationX" />
+		<bean-property-setter-rule pattern="Location_Y" propertyname="locationY" />
+		<bean-property-setter-rule pattern="Scale" propertyname="scale" />
+		<bean-property-setter-rule pattern="Label" propertyname="label" />
+		<bean-property-setter-rule pattern="Title" propertyname="title" />
+		<bean-property-setter-rule pattern="Description" propertyname="description" />
+		<bean-property-setter-rule pattern="Url" propertyname="url" />
+		
 	</pattern>
 </digester-rules>
