@@ -1,0 +1,38 @@
+02:04:59.352 [ContainerBackgroundProcessor[StandardEngine[Catalina]]] WARN  o.m.s.mapper.ClassPathMapperScanner - No MyBatis mapper was found in '[com.eastteam]' package. Please check your configuration.
+02:05:48.755 [http-80-1] INFO  c.e.community.web.WeixinController - echo=6421857441065448893
+02:06:20.712 [http-80-1] INFO  c.e.community.web.WeixinController - echo=not from weixin
+02:06:20.948 [http-80-1] INFO  c.e.community.web.WeixinController - echo=not from weixin
+02:10:27.991 [http-80-1] INFO  c.e.community.web.WeixinController - receive message:<xml><ToUserName><![CDATA[gh_01ae4922ad92]]></ToUserName>
+<FromUserName><![CDATA[ooKCXs710jt2KQryzpR5diBmXbJA]]></FromUserName>
+<CreateTime>1411884628</CreateTime>
+<MsgType><![CDATA[event]]></MsgType>
+<Event><![CDATA[LOCATION]]></Event>
+<Latitude>30.472933</Latitude>
+<Longitude>114.393532</Longitude>
+<Precision>30.000000</Precision>
+</xml>
+02:10:59.217 [http-80-1] INFO  c.e.community.web.WeixinController - receive message:<xml><ToUserName><![CDATA[gh_01ae4922ad92]]></ToUserName>
+<FromUserName><![CDATA[ooKCXs710jt2KQryzpR5diBmXbJA]]></FromUserName>
+<CreateTime>1411884659</CreateTime>
+<MsgType><![CDATA[text]]></MsgType>
+<Content><![CDATA[你好]]></Content>
+<MsgId>6063998436330677751</MsgId>
+</xml>
+02:11:23.613 [http-80-1] INFO  c.e.community.web.WeixinController - receive message:<xml><ToUserName><![CDATA[gh_01ae4922ad92]]></ToUserName>
+<FromUserName><![CDATA[ooKCXs710jt2KQryzpR5diBmXbJA]]></FromUserName>
+<CreateTime>1411884683</CreateTime>
+<MsgType><![CDATA[text]]></MsgType>
+<Content><![CDATA[hellow]]></Content>
+<MsgId>6063998539409892879</MsgId>
+</xml>
+10:45:09.857 [http-80-1] INFO  c.e.community.web.WeixinController - receive message:<xml><ToUserName><![CDATA[gh_01ae4922ad92]]></ToUserName>
+<FromUserName><![CDATA[ooKCXs-znaRck6v0-nfnvAI8496s]]></FromUserName>
+<CreateTime>1411915510</CreateTime>
+<MsgType><![CDATA[event]]></MsgType>
+<Event><![CDATA[LOCATION]]></Event>
+<Latitude>36.058418</Latitude>
+<Longitude>120.295425</Longitude>
+<Precision>30.000000</Precision>
+</xml>
+02:53:17.001 [http-80-2] INFO  c.e.community.web.WeixinController - echo=not from weixin
+root@easteamgeek:/user/tomcat/apache-tomcat-6.0.28/logs# 

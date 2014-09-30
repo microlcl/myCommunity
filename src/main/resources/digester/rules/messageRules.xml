@@ -1,0 +1,14 @@
+<!DOCTYPE digester-rules PUBLIC
+  "-//Apache Commons //DTD digester-rules XML V1.0//EN"
+  "http://commons.apache.org/digester/dtds/digester-rules-3.0.dtd">
+<digester-rules>
+	<pattern value="xml">
+		<object-create-rule classname="com.eastteam.community.entity.WeixinMessage" />
+		<bean-property-setter-rule pattern="ToUserName" propertyname="toUserName" />
+		<bean-property-setter-rule pattern="FromUserName" propertyname="fromUserName" />
+		<bean-property-setter-rule pattern="CreateTime" propertyname="createTime" />
+		<bean-property-setter-rule pattern="Content" propertyname="content" />
+		<bean-property-setter-rule pattern="MsgType" propertyname="messageType" />		
+		<bean-property-setter-rule pattern="MsgId" propertyname="messageId" />
+	</pattern>
+</digester-rules>
