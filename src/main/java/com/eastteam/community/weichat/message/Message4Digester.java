@@ -25,6 +25,11 @@ public class Message4Digester extends BaseWeiChatMessage {
 	private String title;
 	private String description;
 	private String url;
+	
+	public Message4Digester() {
+		super();
+	}
+	
 	public String getContent() {
 		return content;
 	}

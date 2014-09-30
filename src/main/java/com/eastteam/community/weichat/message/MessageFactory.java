@@ -1,5 +1,7 @@
 package com.eastteam.community.weichat.message;
 
+import java.io.ByteArrayInputStream;
+
 import org.apache.commons.digester3.Digester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +15,7 @@ public class MessageFactory {
 	public static BaseWeiChatMessage createWeiChatMessage(String message) {
 		Digester digester = DigesterUtils.getDigester();
 		try {
-			Message4Digester msgBean =  (Message4Digester)digester.parse(message);
+			Message4Digester msgBean =  (Message4Digester)digester.parse(new ByteArrayInputStream(message.getBytes("UTF-8")));
 			if (msgBean.getMessageType().equalsIgnoreCase("text")) {
 				return new TextWeiChatMessage(msgBean);
 			} 
