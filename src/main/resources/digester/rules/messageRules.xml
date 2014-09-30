@@ -3,7 +3,7 @@
   "http://commons.apache.org/digester/dtds/digester-rules-3.0.dtd">
 <digester-rules>
 	<pattern value="xml">
-		<object-create-rule classname="com.eastteam.community.entity.WeixinMessage" />
+		<object-create-rule classname="com.eastteam.community.weichat.message.TextWeiChatMessage" />
 		<bean-property-setter-rule pattern="ToUserName" propertyname="toUserName" />
 		<bean-property-setter-rule pattern="FromUserName" propertyname="fromUserName" />
 		<bean-property-setter-rule pattern="CreateTime" propertyname="createTime" />

@@ -1,12 +1,18 @@
-package com.eastteam.community.entity;
+package com.eastteam.community.weichat.message;
 
-public class WeixinMessage extends BaseEntity {
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+/**
+ * WeiChat消息基类，可扩展为文本，声音，视频，地理位置，链接消息等
+ * @author lichlei
+ *
+ */
+public class BaseWeiChatMessage {
 	
 	private String fromUserName;
 	private String toUserName;
 	private String createTime;
 	private String messageType;
-	private String content;
 	private String messageId;
 
 	public String getFromUserName() {
@@ -33,12 +39,7 @@ public class WeixinMessage extends BaseEntity {
 	public void setMessageType(String messageType) {
 		this.messageType = messageType;
 	}
-	public String getContent() {
-		return content;
-	}
-	public void setContent(String content) {
-		this.content = content;
-	}
+
 	public String getMessageId() {
 		return messageId;
 	}
@@ -46,6 +47,9 @@ public class WeixinMessage extends BaseEntity {
 		this.messageId = messageId;
 	}
 	
-	
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this);
+	}
 
 }
